@@ -72,6 +72,10 @@ public class ImpresionInmediata {
 
     }
 
+    /**
+     * Muestra en pantalla la lista de todas las impresoras disponibles en el
+     * sistema
+     */
     public void listarImpresoras() {
         PrintService[] printServices = PrintServiceLookup.lookupPrintServices(null, null);
         System.out.println("Lista de impresoras disponibles");
@@ -81,6 +85,12 @@ public class ImpresionInmediata {
         }
     }
 
+    /**
+     * Nos regresa el PrintService que representa la impresora con el nombre que
+     * le indiquemos
+     * @param printerName nombre de la impresora que deseamos usar
+     * @return PrintService que representa la impresora que deseamos usar
+     */
     private PrintService findPrintService(String printerName) {
         PrintService[] printServices = PrintServiceLookup.lookupPrintServices(null, null);
         for (PrintService printService : printServices) {
