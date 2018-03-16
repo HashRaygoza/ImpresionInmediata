@@ -63,12 +63,12 @@ public class ImpresionInmediata {
         PDDocument document = PDDocument.load(bais);
 
         PrintService myPrintService = this.findPrintService("Deskjet-1510-series");
-        PrinterJob job = PrinterJob.getPrinterJob();
+        PrinterJob printerJob = PrinterJob.getPrinterJob();
 
-        job.setPageable(new PDFPageable(document));
-        job.setPrintService(myPrintService);
+        printerJob.setPageable(new PDFPageable(document));
+        printerJob.setPrintService(myPrintService);
 
-        job.print();
+        printerJob.print();
 
     }
 
