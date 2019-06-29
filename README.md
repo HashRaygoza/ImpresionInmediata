@@ -1,206 +1,223 @@
-# Ejecutar periódicamente una función en Java
+# Imprimiendo en Java SIN mostrar el diálogo de impresión
 
-Una de las situaciones con las que seguro tendrá que lidiar al realizar una aplicación es ejecutar un método en forma periódica cada vez que pase un intervalo de tiempo especificado, ya sea para verificar el estado de un sensor, consultar o actualizar una base de datos, generar un reporte o enviar datos a un servidor, pero no se preocupe, hacer esto en Java es muy sencillo gracias a las clases *Timer* y *TimerTask.*
+![Impreso automáticamente y sin pedir permiso](img/inmediata_0_automatico.jpg)
 
-## Timer
+Si se decida a programar sistemas hechos a la medida para diferentes negocios el generar reportes no debiera ser algo inusual, mucho menos que el cliente pida que se puedan mandar a la impresora pero ¿Que tal que el cliente pida que un reporte se imprima a una hora especifica?, esto suele tener un detalle inesperado, el que se imprima incluso si no hay nadie en la oficina para presionar el botón Imprimir, ¿Suena complicado?, ¿Algo que solo se puede hacer vía un cable serial y mandando los bits directamente?, nada de eso, aquí le digo como.
 
-La clase *Timer* nos permite ejecutar una función en forma periódica a un intervalo especificado, su uso es bastante sencillo basta con crear un objeto *Timer* y usar el método *scheduleAtFixedRate* el cual toma tres argumentos que son los siguientes:
+Para esto nos basaremos en lo visto en una entrada previa, por lo que le recomiendo le eche un vistazo si no lo ha hecho ya.
 
-* task, un objeto TimerTask cuyo método run se ejecutara al intervalo indicado
-* delay, la cantidad de milisegundos que queremos esperar antes de comenzar
-* period, cada cuanto en milisegundo queremos ejecutar el método run del objeto TimerTask
+Ya que halla refrescado su memoria veamos como mandar algo a la impresora sin mostrar el dialogo de impresión o pedir permiso al usuario (Obviamente solo usara este poder para el bien, ¿verdad?).
 
-Esto en código se ve de la siguiente manera:
+## Teoría
+De las entradas anteriores con la librería PdfBox seguro recordara el la clase PrinterJob es la que se encarga de mandar el documento a la impresora y para indicar la impresora necesitamos llamar al método printDialog, este nos deja seleccionar la impresora y nos pide la confirmación, pero esta no es la única forma de indicar la impresora.
 
-```java
-temporizador.scheduleAtFixedRate(tarea, 0, 1000*segundos);
-```
-## TimerTask
+Esto lo hacemos con la clase PrintService esta nos deja indicar directamente a PrinterJob la impresora saltandonos el dialogo de selección de impresora y la confirmación.
 
-Ya definimos cuando y cada cuanto queremos que una función se ejecute, ahora llego el momento de definir dicha función, para hacer esto debemos crear una subclase de *TimerTask* y redefinir el método run de modo que ejecute el código que nosotros queramos, como se ve en el siguiente ejemplo:
+Ahora ¿Como creamos ese objeto PrintService? bueno para eso necesitamos dos cosas, primero saber el nombre exacto de la impresora que desea usar, hay dos formas de hacer esto, una es ver el dialogo de impresoras del sistema operativo, como se ve en la figura.
 
-```java
-package mx.com.hash.tareaprogramada;
+![Así se ve en Fedora Linux, puede variar según su sistema operativo](img/inmediata_1_impresoras_sistema.png)
 
-import java.util.TimerTask;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-/**
- *
- * @author david
- */
-public class Tarea extends TimerTask {
-    static private final Logger LOGGER = Logger.getLogger("mx.com.hash.tareaprogramada.Tarea");
-    private Integer contador;    
-    
-    public Tarea() {
-        contador = 0;
-    }
-
-    @Override
-    public void run() {
-        LOGGER.log(Level.INFO, "Numero de ejecución {0}", contador);
-        contador++;
-    }
-    
-}
-```
-
-De nuevo dentro del método run puede poner el código que quiera, llamar a otras clases y demas, no sienta que debe limitarse a funciones de la subclase de *TimerTask*.
-
-Otro detalle a recordar es que el *Timer* llama al método *run* del objeto que le pasamos, de modo que si almacena información en ese objeto esta estará disponible entre cada ejecución del Timer, esto quedara mas claro en el ejemplo.
-
-## Ejemplo
-
-Para dejar mas en claro todo esto hagamos un pequeño ejemplo, llamando a una función cada 5 segundos que nos escriba en pantalla cuantas veces hemos llamado a la función, para esto usaremos el siguiente código.
+La otra es ejecutar la siguiente función la cual le listara todas las impresoras disponibles en su sistema.
 
 ```java
-package mx.com.hash.tareaprogramada;
+public void listarImpresoras() {
+    PrintService[] printServices = PrintServiceLookup.lookupPrintServices(null, null);
+    System.out.println("Lista de impresoras disponibles");
 
-import java.util.Timer;
-import java.util.logging.Logger;
-
-/**
- *
- * @author david
- */
-public class TareaProgramada {
-    static private final Logger LOGGER = Logger.getLogger("mx.com.hash.tareaprogramada.TareaProgramada");
-    
-    static public void main(String[] args){
-        Tarea tarea = new Tarea();
-        Timer temporizador = new Timer();
-        Integer segundos = 5;
-        
-        temporizador.scheduleAtFixedRate(tarea, 0, 1000*segundos);
+    for (PrintService printService : printServices) {
+        System.out.println("\t" + printService.getName());
     }
 }
 ```
 
-```java
-package mx.com.hash.tareaprogramada;
+Esta función le presentara en pantalla un listado completo de las impresoras del sistema, recuerde correrla en un proyecto que incluya PdfBox, la salida sera similar a la figura.
 
-import java.util.TimerTask;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+![Como ve solo tengo una impresora conectada.](img/inmediata_2_listado_impresoras.png)
 
-/**
- *
- * @author david
- */
-public class Tarea extends TimerTask {
-    static private final Logger LOGGER = Logger.getLogger("mx.com.hash.tareaprogramada.Tarea");
-    private Integer contador;    
-    
-    public Tarea() {
-        contador = 0;
-    }
-
-    @Override
-    public void run() {
-        LOGGER.log(Level.INFO, "Numero de ejecución {0}", contador);
-        contador++;
-    }
-    
-}
-```
-
-Y al ejecutarlo veremos lo siguiente:
-
-```
-oct 27, 2018 2:59:06 AM mx.com.hash.tareaprogramada.Tarea run
-INFORMACIÓN: Numero de ejecución 0
-oct 27, 2018 2:59:11 AM mx.com.hash.tareaprogramada.Tarea run
-INFORMACIÓN: Numero de ejecución 1
-oct 27, 2018 2:59:16 AM mx.com.hash.tareaprogramada.Tarea run
-INFORMACIÓN: Numero de ejecución 2
-oct 27, 2018 2:59:21 AM mx.com.hash.tareaprogramada.Tarea run
-INFORMACIÓN: Numero de ejecución 3
-oct 27, 2018 2:59:26 AM mx.com.hash.tareaprogramada.Tarea run
-INFORMACIÓN: Numero de ejecución 4
-oct 27, 2018 2:59:31 AM mx.com.hash.tareaprogramada.Tarea run
-INFORMACIÓN: Numero de ejecución 5
-oct 27, 2018 2:59:36 AM mx.com.hash.tareaprogramada.Tarea run
-INFORMACIÓN: Numero de ejecución 6
-oct 27, 2018 2:59:41 AM mx.com.hash.tareaprogramada.Tarea run
-INFORMACIÓN: Numero de ejecución 7
-oct 27, 2018 2:59:46 AM mx.com.hash.tareaprogramada.Tarea run
-INFORMACIÓN: Numero de ejecución 8
-oct 27, 2018 2:59:51 AM mx.com.hash.tareaprogramada.Tarea run
-INFORMACIÓN: Numero de ejecución 9
-oct 27, 2018 2:59:56 AM mx.com.hash.tareaprogramada.Tarea run
-INFORMACIÓN: Numero de ejecución 10
-oct 27, 2018 3:00:01 AM mx.com.hash.tareaprogramada.Tarea run
-INFORMACIÓN: Numero de ejecución 11
-oct 27, 2018 3:00:06 AM mx.com.hash.tareaprogramada.Tarea run
-INFORMACIÓN: Numero de ejecución 12
-```
-
-Como puede ver el objeto tarea no se destruye durante la ejecución del Timer, por lo que la información en el persiste e ejecución en ejecución.
-
-## ¿Que pasa si la función tarda mucho en ejecutarse?
-
-Un caso que puede presentarse es que la función tarde tanto en ejecutarse que llegue el momento de volverla a ejecutar y aun no halla acabado, cosa muy posible si depende de conexiones a base de datos, servidores externos o conexiones, ¿En ese caso que pasaría?
-
-Bueno hagamos la prueba, modifiqué la clase Tarea para que quede así
+Como puede ver en el código de la función de búsqueda, la lista completa de impresoras nos la proporciono el método PrintServiceLookup.lookupPrintServices(null, null); el cual listo todas las impresoras, bueno usando esa misma idea podemos crear un método que nos regrese la impresora con el nombre indicado que seria como se ve a continuación
 
 ```java
-package mx.com.hash.tareaprogramada;
+private PrintService findPrintService(String printerName) {
+    PrintService[] printServices = PrintServiceLookup.lookupPrintServices(null, null);
+    for (PrintService printService : printServices) {
+        System.out.println(printService.getName());
 
-import java.util.TimerTask;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-/**
- *
- * @author david
- */
-public class Tarea extends TimerTask {
-    static private final Logger LOGGER = Logger.getLogger("mx.com.hash.tareaprogramada.Tarea");
-    private Integer contador;    
-    
-    public Tarea() {
-        contador = 0;
-    }
-
-    @Override
-    public void run() {
-        LOGGER.log(Level.INFO, "Numero de ejecución {0}", contador);
-        contador++;
-        
-        try {
-            // Con esto hacemos que la funcion tarde *mas* en ejecutarse que
-            // el periodo especificado
-            Thread.sleep(10000);
-        } catch (InterruptedException ex) {
-            LOGGER.log(Level.SEVERE, "Error de interrupcion");
+        if (printService.getName().trim().equals(printerName)) {
+            return printService;
         }
     }
-    
+    return null;
 }
 ```
 
-Lo que hacemos aquí es agregar un retraso a la función *run* de modo que tarde 10 segundos en ejecutarse pero no modificamos lo demas, de modo que el temporizador ejecutara cada 5 segundos una función que tarda 10 segundos en ejecutarse, el resultado se ve a continuación.
+Basta con pasarle de parámetro el nombre de la impresora que deseamos usar y nos regresara el PrintService adecuado.
 
-```
-oct 27, 2018 3:01:17 AM mx.com.hash.tareaprogramada.Tarea run
-INFORMACIÓN: Numero de ejecución 0
-oct 27, 2018 3:01:27 AM mx.com.hash.tareaprogramada.Tarea run
-INFORMACIÓN: Numero de ejecución 1
-oct 27, 2018 3:01:37 AM mx.com.hash.tareaprogramada.Tarea run
-INFORMACIÓN: Numero de ejecución 2
-oct 27, 2018 3:01:47 AM mx.com.hash.tareaprogramada.Tarea run
-INFORMACIÓN: Numero de ejecución 3
-oct 27, 2018 3:01:57 AM mx.com.hash.tareaprogramada.Tarea run
-INFORMACIÓN: Numero de ejecución 4
-oct 27, 2018 3:02:07 AM mx.com.hash.tareaprogramada.Tarea run
-INFORMACIÓN: Numero de ejecución 5
-oct 27, 2018 3:02:17 AM mx.com.hash.tareaprogramada.Tarea run
-INFORMACIÓN: Numero de ejecución 6
-oct 27, 2018 3:02:27 AM mx.com.hash.tareaprogramada.Tarea run
-INFORMACIÓN: Numero de ejecución 7
+Lo ultimo que necesitaría hacer ya que tenga el PrintService es indicarle al objeto PrinterJob que deseamos usar ese PrintService, esto se logra con una sola linea de código que es:
+
+```java
+printerJob.setPrintService(myPrintService);
 ```
 
-Como ve el retraso entre llamadas es el indicado por la función, el Timer no llamara al método run sino hasta que este halla acabado por lo que no debe preocuparse de que queden cosas incompletas, lo que si puede pasar es que si ya paso el periodo entre llamadas el método run se llame inmediatamente después de terminar la llamada que tardo demas.
+Hecho esto basta con llamar el método print() y el documento se enviara directo a la impresora.
 
+Pero para hacer mas claro todo veamos un ejemplo.
+
+```java
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package mx.hash.impresioninmediata;
+
+import com.itextpdf.kernel.geom.PageSize;
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.layout.Document;
+import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.layout.element.Table;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.print.PrintService;
+import javax.print.PrintServiceLookup;
+import javax.swing.JOptionPane;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.printing.PDFPageable;
+
+/**
+ *
+ * @author david
+ */
+public class ImpresionInmediata {
+
+ private final static Logger LOGGER = Logger.getLogger("mx.hash.impresioninmediata.ImpresionInmediata");
+
+ static public void main(String[] args) {
+  ImpresionInmediata printer = new ImpresionInmediata();
+
+  printer.listarImpresoras();
+
+  try {
+   ByteArrayOutputStream documentoBytes = printer.crearDocumentoiText();
+   printer.imprimir(documentoBytes);
+  } catch (IOException | PrinterException ex) {
+   JOptionPane.showMessageDialog(null, "Error de impresion", "Error", JOptionPane.ERROR_MESSAGE);
+   LOGGER.log(Level.SEVERE, null, ex);
+  }
+ }
+
+ /**
+  * Envia a imprimir el ByteArrayOutoutStream creado de un documento iText
+  *
+  * @param documentoBytes
+  * @throws IOException
+  * @throws PrinterException
+  */
+ public void imprimir(ByteArrayOutputStream documentoBytes) throws IOException, PrinterException {
+
+  // Aqui convertimos la el arreglo de salida a uno de entrada que podemos
+  // mandar a la impresora
+  ByteArrayInputStream bais = new ByteArrayInputStream(documentoBytes.toByteArray());
+
+  // Creamos un PDDocument con el arreglo de entrada que creamos
+  PDDocument document = PDDocument.load(bais);
+
+  PrintService myPrintService = this.findPrintService("Deskjet-1510-series");
+  PrinterJob printerJob = PrinterJob.getPrinterJob();
+
+  printerJob.setPageable(new PDFPageable(document));
+  printerJob.setPrintService(myPrintService);
+
+  printerJob.print();
+
+ }
+
+ /**
+  * Muestra en pantalla la lista de todas las impresoras disponibles en el
+  * sistema
+  */
+ public void listarImpresoras() {
+  PrintService[] printServices = PrintServiceLookup.lookupPrintServices(null, null);
+  System.out.println("Lista de impresoras disponibles");
+
+  for (PrintService printService: printServices) {
+   System.out.println("\t" + printService.getName());
+  }
+ }
+
+ /**
+  * Nos regresa el PrintService que representa la impresora con el nombre que
+  * le indiquemos
+  * @param printerName nombre de la impresora que deseamos usar
+  * @return PrintService que representa la impresora que deseamos usar
+  */
+ private PrintService findPrintService(String printerName) {
+  PrintService[] printServices = PrintServiceLookup.lookupPrintServices(null, null);
+  for (PrintService printService: printServices) {
+   System.out.println(printService.getName());
+
+   if (printService.getName().trim().equals(printerName)) {
+    return printService;
+   }
+  }
+  return null;
+ }
+
+ /**
+  * Crea un documento via la libreria iText y lo almacena como un
+  * ByteArrayOutputStream
+  *
+  * @return Documento iText en formato ByteArrayOutputStream
+  */
+ public ByteArrayOutputStream crearDocumentoiText() {
+  // Es en este ByteArrayOutputStream donde se pone el documento una vez
+  // que se llama a documento.close()
+  ByteArrayOutputStream documentoBytes = new ByteArrayOutputStream();
+
+  PdfWriter pdfWriter = new PdfWriter(documentoBytes);
+  PdfDocument pdfDoc = new PdfDocument(pdfWriter);
+
+  Document documento = new Document(pdfDoc, PageSize.LETTER);
+  documento.add(new Paragraph("Inicia el reporte"));
+  documento.add(this.crearTabla());
+
+  documento.close();
+
+  return documentoBytes;
+ }
+
+ private Table crearTabla() {
+  float[] anchos = {
+   50 F,
+   50 F,
+   50 F
+  };
+  Table tablaEncabezado = new Table(anchos);
+
+  tablaEncabezado.setWidth(500 F);
+
+  tablaEncabezado.addCell("Hora Inicio");
+  tablaEncabezado.addCell("Hora Fin");
+  tablaEncabezado.addCell("");
+  tablaEncabezado.addCell("Fecha Inicio");
+  tablaEncabezado.addCell("Fecha Fin");
+  tablaEncabezado.addCell("Fin de Turno");
+
+  return tablaEncabezado;
+ }
+
+}
+```
+
+Al correr este ejemplo muy posiblemente la indicara un error (a menos que por casualidad su impresora se llama exactamente igual que la mia), no se preocupe al correr el programa la lista completa de impresoras aparecerá en pantalla, solamente vea cual impresora desea usar y acomode la siguiente linea
+
+```java
+PrintService myPrintService = this.findPrintService("Deskjet-1510-series");
+```
+
+Poniendo el nombre de la impresora como argumento a esa función, hecho esto el documento se imprimirá la siguiente vez que corra el programa.
